@@ -16,7 +16,7 @@
         class="w-25"
         show-size
         accept=".xlsx"
-        label="İmport Excel File"
+        label="Import Excel File"
         variant="underlined"
         @change="handleFileUpload"
       ></v-file-input>
@@ -49,20 +49,25 @@ export default {
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        console.log(jsonData);
         localStorage.setItem("myData", JSON.stringify(jsonData));
+        console.log("json data", jsonData);
 
         this.data = jsonData.map((item) => {
           return {
             MPN: item.MPN,
             BASLIK: item.BAŞLIK,
             DETAY: item.DETAY,
-            ARAÇMODEL: item.ARAÇMODEL,
-            images: [item.IMG1, item.IMG2, item.IMG3, item.IMG4, item.IMG5],
+            ARACMODEL: item.ARACMODEL,
+            images: [
+              { url: item.IMG1, originalWidth: null, originalHeight: null },
+              { url: item.IMG2, originalWidth: null, originalHeight: null },
+              { url: item.IMG3, originalWidth: null, originalHeight: null },
+              { url: item.IMG4, originalWidth: null, originalHeight: null },
+              { url: item.IMG5, originalWidth: null, originalHeight: null },
+            ],
             STATUS: item.STATUS,
           };
         });
-        console.log("YENİ DATA", this.data);
         this.$emit("excelData", this.data);
       };
 
