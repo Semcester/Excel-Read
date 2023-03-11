@@ -6,11 +6,16 @@
     "
     class="d-flex flex-column pa-md-4 mx-lg-auto mb-10 mt-10"
   >
-    <v-snackbar v-model="snackbar" :timeout="timeout" position="top">
+    <v-snackbar
+      v-model="snackbar"
+      :timeout="timeout"
+      style="position: top"
+      color="red-darken-2"
+    >
       {{ text }}
 
       <template v-slot:actions>
-        <v-btn color="blue" variant="text" @click="snackbar = false">
+        <v-btn color="white" variant="text" @click="snackbar = false">
           Close
         </v-btn>
       </template>
@@ -39,10 +44,14 @@
     <div class="d-flex mb-5">
       <v-card
         class="justify-center ml-3"
-        v-for="(img, index) in product.images"
+        v-for="(img, index) in imageUrl"
         :key="index"
-        @click="getProduct(img.url)"
+        @click="getProduct(img.url, product.MPN)"
+        :class="{ selected: selectedIndex == index }"
       >
+        <h3 class="mt-3" color="green" v-if="selectedIndex == index">
+          Checked
+        </h3>
         <v-img
           @load="getDemention(index)"
           ref="image"
@@ -52,7 +61,6 @@
           :src="img.url"
           :alt="img.url"
           @click="selectedIndex = index"
-          :class="{ selected: selectedIndex == index }"
         ></v-img>
         <v-card-text>
           Image Size:<strong
@@ -64,7 +72,7 @@
             :width="180"
             variant="tonal"
             color="info"
-            @click="downloadImage(img.url)"
+            @click="getProduct(img.url, product.MPN)"
           >
             Download Image
           </v-btn>
@@ -75,7 +83,6 @@
 </template>
 
 <script>
-import { saveAs } from "file-saver";
 import axios from "axios";
 
 export default {
@@ -86,8 +93,21 @@ export default {
       selectedIndex: null,
       snackbar: false,
       text: "Bu fotoğraf indirilmiyor. Sağ tıklayıp indirin...",
-      timeout: 4000,
+      timeout: 2000,
     };
+  },
+  computed: {
+    imageUrl() {
+      const imageArray = this.product.images;
+      for (let i = 0; i < imageArray.length; i++) {
+        const item = imageArray[i].url;
+
+        if (item.endsWith(".webp")) {
+          imageArray[i].url = item.slice(0, -6);
+        }
+      }
+      return imageArray;
+    },
   },
 
   methods: {
@@ -105,43 +125,32 @@ export default {
     },
     async getDemention(index) {
       const imageSize = await this.getImageSize(index);
-
       this.product.images[index].originalWidth = imageSize.width;
       this.product.images[index].originalHeight = imageSize.height;
     },
-    async downloadImage(product) {
-      if (product.endsWith(".webp")) {
-        product = product.slice(0, -6);
-      }
-      console.log("PRODUCT SON HALİ", product);
-      this.isSelected = !this.isSelected;
-      this.selectedImage = product;
-      console.log("SELECTED IMAGE", this.selectedImage);
-      if (this.selectedImage == "") {
-        alert("Bir Resim Seç");
-        return;
+    async getImage(product) {},
+
+    async getProduct(url, fileName) {
+      console.log("FN", url);
+      console.log("NAME", fileName);
+      if (url.endsWith(".webp")) {
+        url = url.slice(0, -6);
       }
       try {
-        const corsAnywhereUrl = "https://cors-anywhere.herokuapp.com/";
+        const response = await axios.get(
+          "http://localhost:3000/downloadImage",
+          {
+            params: { url, fileName },
+          }
+        );
 
-        const response = await fetch(corsAnywhereUrl + this.selectedImage);
-        if (response.ok === true) {
-          const blob = await response.blob();
-          this.selectedImage = "";
-
-          saveAs(blob, this.product.MPN);
+        if (response.data.success) {
+          console.log("Image downloaded successfully!");
         } else {
-          this.snackbar = true;
+          console.error("Error downloading image:", response.data.message);
         }
-      } catch (e) {
-        console.log("HATAAAA");
-      }
-
-      console.log("Download IMAGE", this.selectedImage);
-    },
-    getProduct(product) {
-      if (product.endsWith(".webp")) {
-        product = product.concat(".jpg");
+      } catch (err) {
+        console.error("Error downloading image:", err.message);
       }
     },
   },
@@ -156,5 +165,10 @@ export default {
 }
 button {
   margin-left: 10px;
+}
+selected {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
+    rgba(0, 0, 0, 0.3) 0px 30px 60px -30px,
+    rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
 }
 </style>

@@ -52,6 +52,8 @@ export default {
         localStorage.setItem("myData", JSON.stringify(jsonData));
         console.log("json data", jsonData);
 
+        
+
         this.data = jsonData.map((item) => {
           return {
             MPN: item.MPN,
